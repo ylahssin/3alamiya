@@ -1,0 +1,323 @@
+#include "push_swap.h"
+
+int ft_abs(int number)
+{
+  if (number < 0)
+      return (-number);
+  return (number);
+}
+
+void sa(t_list *a)
+{
+   int swap = a->content;
+   a->content = a->next->content;
+   a->next->content = swap;
+   write(1, "sa\n", 3);
+}
+
+void sort_three(t_list **a)
+{
+   if ((*a)->content > (*a)->next->content && (*a)->next->content < (*a)->next->next->content
+       && (*a)->content < (*a)->next->next->content)
+       sa(*a);
+   else if ((*a)->content > (*a)->next->content && (*a)->next->content > (*a)->next->next->content)
+   {
+       sa(*a);
+       rra(a, ZERO); 
+   }
+   else if ((*a)->content > (*a)->next->content && (*a)->next->content < (*a)->next->next->content
+       && (*a)->content > (*a)->next->next->content)
+       ra(a, ZERO);
+   else if ((*a)->content < (*a)->next->content && (*a)->next->content > (*a)->next->next->content
+       && (*a)->content < (*a)->next->next->content)
+   {
+       sa(*a);
+       ra(a, ZERO);
+   }
+   else if ((*a)->content < (*a)->next->content && (*a)->next->content > (*a)->next->next->content
+       && (*a)->content > (*a)->next->next->content)
+       rra(a, ZERO);
+}
+
+t_list *change_stack_a(t_list **stack_a, int *arr, int size)
+{
+  t_list *tmp;
+  int i;
+  tmp = *stack_a;
+  while (tmp)
+  {
+      i = 0;
+      while (i < size)
+      {
+          if (tmp->content == arr[i])
+          {
+              tmp->content = i;
+              break;
+          }
+          i++;
+      }
+      tmp = tmp->next;
+  }
+  return (*stack_a);
+}
+
+void sort_int_tab(int *tab, unsigned int size)
+{
+  unsigned int i;
+  unsigned int j;
+  int temp;
+  i = 0;
+  while (i < size)
+  {
+      j = 0;
+      while (j < size - 1)
+      {
+          if (tab[j] > tab[j + 1])
+          {
+              temp = tab[j];
+              tab[j] = tab[j + 1];
+              tab[j + 1] = temp;
+          }
+          j++;
+      }
+      i++;
+  }
+}
+
+t_list *ft_get_runk(t_list *stack_a, int size)
+{
+  int *array;
+  int i;
+  t_list *tmp;
+  array = malloc(sizeof(int) * size);
+  if (!array)
+      return (NULL);
+  i = 0;
+  tmp = stack_a;
+  while (tmp)
+  {
+      array[i++] = tmp->content;
+      tmp = tmp->next;
+  }
+  sort_int_tab(array, (unsigned int)size);
+  stack_a = change_stack_a(&stack_a, array, size);
+  free(array);
+  return (stack_a);
+}
+
+int calculate_cost(t_list **stack, int current_position, int target_number)
+{
+  int midd;
+  midd = ft_lstsize(*stack) / 2;
+  if (current_position >= ft_lstsize(*stack))
+      return (ft_lstsize(*stack));
+  else if (target_number && current_position >= midd)
+      return (ft_lstsize(*stack) - current_position);
+  else if (target_number && current_position < midd)
+      return (-(current_position + 1));
+  else if (!target_number && current_position >= midd)
+      return (ft_lstsize(*stack) - current_position + 1);
+  else if (!target_number && current_position < midd)
+       return (-current_position);
+  return(midd * 2);
+}
+
+static int get_value(t_list *stack, int value, int greatness)
+{
+   int best_match_position;
+   int best_match;
+   int position;
+   int val;
+   t_list *tmp;
+   best_match_position = -1;
+   position = 0;
+   tmp = stack;
+   best_match = (greatness == 1) ? INT_MAX : INT_MIN;
+   while (tmp)
+   {
+       val = tmp->content;
+       if ((greatness == -1 && val < value && val > best_match)
+           || (greatness == 1 && val > value && val < best_match))
+       {
+           best_match = val;
+           best_match_position = position;
+       }
+       position++;
+       tmp = tmp->next;
+   }
+   return (best_match_position);
+}
+
+int max(int a, int b)
+{
+  if (a > b)
+      return (a);
+  return (b);
+}
+
+int min(int a, int b)
+{
+  if (a < b)
+      return (a);
+  return (b);
+}
+
+int next_move(int big_cost, int less_cost, int cost_b)
+{
+  int deff_operation;
+  int same_operation;
+  if (big_cost * cost_b >= 0)
+  {
+      same_operation = big_cost;
+      deff_operation = less_cost;
+  }
+  else
+  {
+      same_operation = less_cost;
+      deff_operation = big_cost;
+  }
+  if (ft_abs(deff_operation) * ft_abs(cost_b) >= ft_abs(same_operation))
+      return (same_operation);
+  return (deff_operation);
+}
+
+int calculate_cost_for_a(t_list **stack_a, int value_fs_b, int cost_b)
+{
+  t_number best_num;
+  best_num.less_number_position = get_value(*stack_a, value_fs_b, NEGATIVE);
+  best_num.big_number_position = get_value(*stack_a, value_fs_b, POSITIVE);
+  best_num.big_num_cost = calculate_cost(stack_a, best_num.big_number_position, POSITIVE);
+  best_num.less_num_cost = calculate_cost(stack_a, best_num.less_number_position, ZERO);
+  if (best_num.less_number_position == -1)
+      return (best_num.big_num_cost);
+  else if (best_num.big_num_cost == -1)
+      return (best_num.less_num_cost);
+  if (best_num.big_num_cost * best_num.less_num_cost >= 0)
+  {
+      if (best_num.big_num_cost < 0)
+          return (max(best_num.big_num_cost, best_num.less_num_cost));
+      else
+          return (min(best_num.big_num_cost, best_num.less_num_cost));
+  }
+  return (next_move(best_num.big_num_cost, best_num.less_num_cost, cost_b));
+}
+
+int calculate_true_cost(t_cost check_cost)
+{
+  if(check_cost.cost_a > 0  && check_cost.cost_a * check_cost.cost_b >= 0) 
+      return (max(check_cost.cost_a, check_cost.cost_b));
+  else if(check_cost.cost_a < 0  && check_cost.cost_a * check_cost.cost_b >= 0) 
+      return (min(check_cost.cost_a, check_cost.cost_b));
+  else
+        return (ft_abs(check_cost.cost_a) + ft_abs(check_cost.cost_b));
+}
+
+void run_two_costs(t_list **stack_a, t_list **stack_b, t_cost cheapest_cost)
+{
+  while (cheapest_cost.cost_a > 0 && cheapest_cost.cost_b > 0)
+  {
+      rr(stack_a, stack_b, POSITIVE);
+      cheapest_cost.cost_a--;
+      cheapest_cost.cost_b--;
+  }
+  while (cheapest_cost.cost_a < 0 && cheapest_cost.cost_b < 0)
+  {
+      rrr(stack_a, stack_b, POSITIVE);
+      cheapest_cost.cost_a++;
+      cheapest_cost.cost_b++;
+  }
+  while (cheapest_cost.cost_a > 0)
+  {
+      ra(stack_a, ZERO);
+      cheapest_cost.cost_a--;
+  }
+  while (cheapest_cost.cost_a < 0)
+  {
+      rra(stack_a, ZERO);
+      cheapest_cost.cost_a++;
+  }
+  while (cheapest_cost.cost_b > 0)
+  {
+      rb(stack_b, ZERO);
+      cheapest_cost.cost_b--;
+  }
+  while (cheapest_cost.cost_b < 0)
+  {
+      rrb(stack_b, ZERO);
+      cheapest_cost.cost_b++;
+  }
+}
+
+void make_cheapest_push(t_list **stack_a, t_list **stack_b)
+{
+   t_cost cost;
+   t_cost cheapest_cost;
+   int position;
+   t_list *tmp;
+   int current_value;
+   cheapest_cost.cost_b = ft_lstsize(*stack_b);
+   cheapest_cost.cost_a = ft_lstsize(*stack_a);
+   position = 0;
+   tmp = *stack_b;
+   while (tmp)
+   {
+       current_value = tmp->content;
+       cost.cost_b = calculate_cost(stack_b, position, 1);
+       cost.cost_a = calculate_cost_for_a(stack_a, current_value, cost.cost_b);
+       if (calculate_true_cost(cost) < calculate_true_cost(cheapest_cost))
+       {
+           cheapest_cost.cost_a = cost.cost_a;
+           cheapest_cost.cost_b = cost.cost_b;
+       }
+       tmp = tmp->next;
+       position++;
+   }
+   printf("%d  %d\n", cheapest_cost.cost_a, cheapest_cost.cost_b);
+   run_two_costs(stack_a, stack_b, cheapest_cost);
+   push_to_a(stack_a, pop_from_b(stack_b));
+}
+
+void cost_check(t_list **stack_a, t_list **stack_b)
+{
+  while (*stack_b)
+      make_cheapest_push(stack_a, stack_b);
+}
+
+void ft_pre_sort(t_list **stack_a, t_list **stack_b, int med)
+{
+  int i;
+  i = 0;
+  int size =ft_lstsize(*stack_a);
+  while (i < size - 3)
+  {
+      if ((*stack_a)->content >= med)
+          push_to_b(stack_b, pop_from_a(stack_a));
+      else
+      {
+          push_to_b(stack_b, pop_from_a(stack_a));
+          rb(stack_b, ZERO);
+      }
+      i++;
+  }
+  if(ft_lstsize(*stack_a) == 3)
+       sort_three(stack_a);
+  cost_check(stack_a, stack_b);
+}
+
+int main(int ac, char **av)
+{
+  t_list *stack_a;
+  t_list *stack_b;
+  stack_b = NULL;
+  if (ac < 2)
+      error(NULL);
+  stack_a = first_stack(&av[1], ac - 1);
+  stack_a = ft_get_runk(stack_a, ft_lstsize(stack_a));
+  ft_pre_sort(&stack_a, &stack_b, ft_lstsize(stack_a) / 2);
+  while(stack_a)
+  {
+      printf("%d->", stack_a->content);
+      stack_a = stack_a->next;
+  }
+  return (0);
+}
