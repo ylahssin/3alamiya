@@ -1,0 +1,42 @@
+#include "so_long.h"
+#include <stdio.h>
+
+int manage_key(int keycode, t_game *game)
+{
+	if(keycode == ESC)
+	{
+		mlx_destroy_window(game->mlx_ptr, game->mlx_win);
+		mlx_clear_window(game->mlx_ptr, game->mlx_win);
+		free(game->mlx_ptr);
+		free(game);
+		ft_error(GAME_OVER, NULL);
+		exit(1);
+	}
+	return(0);
+}
+int manage_window(t_game **game)
+{
+	(*game)->mlx_ptr = mlx_init();
+
+	if(!(*game)->mlx_ptr)
+	{
+		free(*game);
+		return(0);
+	}
+	(*game)->mlx_win = mlx_new_window((*game)->mlx_ptr, WIDTH, HEIGHT, MSG);
+	if(!(*game)->mlx_win)
+		mlx_destroy_window((*game)->mlx_ptr, NULL);
+	//this param is labriti mora press dak key dir chi harak f manage the key so katchdo had function kathato f callback fnction;
+	mlx_key_hook((*game)->mlx_win, manage_key,*game);
+	mlx_loop((*game)->mlx_ptr);
+	return 0;
+}
+void execute_game(t_map **map)
+{
+	t_game *game = malloc(sizeof(t_game));
+
+	if(!game)
+		ft_error(INV_ALC, map);
+	if(!manage_window(&game))
+		ft_error(INV_WND, map);
+}

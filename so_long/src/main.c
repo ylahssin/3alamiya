@@ -109,7 +109,7 @@ int check_valid_chars(char **map)
     return (TRUE);
 }
 
-int is_check(char **map, char c)
+int is_check(char **map, char c, t_position *pos)
 {
     int i = 0, j, count = 0;
 
@@ -119,7 +119,14 @@ int is_check(char **map, char c)
         while (map[i][j])
         {
             if (map[i][j] == c)
+	    {
+		if(map[i][j] == PLA_CHAR)
+		{
+			pos->y = i;
+			pos->x = j;
+		}
                 count++;
+	    }
             j++;
         }
         i++;
@@ -127,7 +134,7 @@ int is_check(char **map, char c)
     return (count == 1);
 }
 
-int is_check_collectible(char **map, char c)
+int is_check_collectible(char **map, char c, int *num)
 {
     int i = 0, j, count = 0;
 
@@ -142,23 +149,54 @@ int is_check_collectible(char **map, char c)
         }
         i++;
     }
+    *num = count;
     return (count >= 1);
 }
+//here i use the Depth force search 😊 : backtrack 
+int is_valid_path(char **map, int x, int y, t_position *pos)
+{
+	char tmp;
 
+	if(x < 0 || y < 0 || !map[y] || !map[y][x] || map[y][x] == CL_WALL)
+		return(0);
+	if(map[y][x] == CL_CHAR)
+		pos->found_collectible++;
+	if(map[y][x] == EXIT_CHAR)
+		pos->found_exit = 1;
+	tmp = map[y][x];
+	map[y][x] = CL_WALL;
+	//this katakhod int chof liha lhal;
+	int valid = is_valid_path(map, x - 1, y, pos)  ||
+		    is_valid_path(map, x + 1, y, pos)  ||
+		    is_valid_path(map, x , y - 1, pos) ||
+		    is_valid_path(map, x, y + 1, pos);
+	(void)valid;
+	map[y][x] = tmp;
+	return(pos->found_collectible == pos->total_collectibe && pos->found_exit);
+}
+int check_path(char **map, t_position current_pos)
+{	
+	return(is_valid_path(map, current_pos.x,current_pos.y, &current_pos));
+}
 void check_all_map(t_map *map, int idx)
 {
+    t_position position;
+
+    position = (t_position){0};   
     if (!check_the_wall(map->map_2d, idx))
         ft_error(INV_WALL, &map);
     else if (!check_is_rectangle(map->map_2d))
         ft_error(INV_REG, &map);
     else if (!check_valid_chars(map->map_2d))
         ft_error(INV_CH, &map);
-    else if (!is_check(map->map_2d, PLA_CHAR))
-        ft_error(INV_PL, &map);
-    else if (!is_check(map->map_2d, EXIT_CHAR))
+    else if (!is_check(map->map_2d, EXIT_CHAR, &position))
         ft_error(INV_EX, &map);
-    else if (!is_check_collectible(map->map_2d, CL_CHAR))
+    else if (!is_check(map->map_2d, PLA_CHAR, &position))
+        ft_error(INV_PL, &map);
+    else if (!is_check_collectible(map->map_2d, CL_CHAR, &position.total_collectibe))
         ft_error(INV_CL, &map);
+    else if (!check_path(map->map_2d, position))
+        ft_error(INV_PATH, &map);
 }
 
 void ft_read_map(t_map *map)
@@ -184,15 +222,20 @@ void ft_read_map(t_map *map)
     check_all_map(map, i - 1);
 }
 
+
 int main(int ac, char **av)
 {
-    t_map *map = malloc(sizeof(t_map));
+    t_game game;
 
-    if (ac < 2 || !map)
-        ft_error(NO_MAP, &map);
-    ft_check_map(av[1], map);
-    ft_read_map(map);
-   ft_lst_free(&map); 
+    if (ac < 2)
+        ft_error(NO_MAP, NULL);
+
+    game.map = malloc(sizeof(t_map));
+    if (!game.map)
+        ft_error("Memory allocation failed!", NULL);
+    ft_check_map(av[1], game.map);
+    ft_read_map(game.map);
+    execute_game(&game);
+    ft_lst_free(&game.map);
     return (SUCCESS);
 }
-
