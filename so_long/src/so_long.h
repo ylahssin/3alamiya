@@ -30,31 +30,36 @@ enum e_CHECK
 #define INV_PATH "Error: NO valid path to exit and collectibles\n"
 #define INV_ALC "Error: Memory allocation failed\n"
 #define INV_WND "Error: Memory Failes to craete window\n"
-#define HEIGHT 1080
-#define WIDTH 1920
+#define HEIGHT  100   //1080
+#define WIDTH   100   //1920
 #define MSG "Welcome To My Game"
 #define ESC 65307
 #define GAME_OVER "GAME OVER\n"
+#define WALL_XPM "texture/wall.xpm"
+#define PLAYER_XPM "texture/player.xpm"
+#define COLLECT_XPM "texture/collect.xpm"
+#define EXIT_XPM "texture/exit.xpm"
+#define SPACE_XPM "texture/space.xpm"
 typedef struct s_map
 {
 	char *name;
 	int fd_map;
-	char **map_2d;
-} t_map;
-typedef struct s_position
-{
-	int x;
-	int y;
-	int total_collectibe;
-	int found_collectible;
-	int found_exit;
-} t_position;
+	char **map_2d
+	void *exit;
+	int width;
+	int hight;
+} t_texture;
+//this is the struct the game
 typedef struct s_game
 {
 	void *mlx_ptr;
 	void *mlx_win;
+	int rows;
+	int cols;
 	t_map *map;
+	t_texture texture;
 } t_game;
+//Prototypes the function
 void execute_game(t_game *game);
 void ft_error(char *str, t_map **lst);
 #endif
